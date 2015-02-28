@@ -92,7 +92,9 @@ def checkMasterPassword(cc, pwdhash):
 	else:
 		ifl = open(gCHECK_FILE_NAME, 'r')
 		line = ifl.readline().rstrip('\n')
+		ifl.close()	
 		filehash = cc.decrypt(line)
+
 		if filehash == pwdhash:
 			retval = 0
 		else:
