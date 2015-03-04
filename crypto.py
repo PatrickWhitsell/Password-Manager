@@ -74,5 +74,10 @@ class CCrypto:
 
 	def generateKey(self, password, salt):
 		# PBKDF2(password, salt, keylength, iterations)
-		key = KDF.PBKDF2(password, salt, 16, 10000) #lastpass uses 10000 iterations
+		#lastpass max recommended is 10000 iterations
+		key = KDF.PBKDF2(password, salt, 16, 10000) #16 Bytes = 128 bits key size
 		return key
+
+
+
+

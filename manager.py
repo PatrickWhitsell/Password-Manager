@@ -9,8 +9,13 @@ gHELP_CMD = '-h'
 gSAVE_CMD = '-S'
 gGET_CMD = '-A'
 
+gCBC_MODE = '-c'
+gCTR_MODE = '-r'
+gEBC_MODE = '-e'
+
 gCHECK_FILE_NAME = 'checkfile.txt'
 gCREDS_FILE_NAME = 'passwd.txt'
+
 
 #----- OUTPUT FUNCTIONS ------#
 def printSuccess(username, password):
@@ -38,7 +43,7 @@ def printHelp():
 	print "%s  -  Save a username and password" % gSAVE_CMD
 	print "%s  -  Retrieve a password by username" % gGET_CMD
 	print "No default method. One of the above methods must be selected."
-	print "\nOptions: "
+	print "\nOptions (AES Mode):"
 	print "-e  -  EBC Mode (Insecure)"
 	print "-r  -  CTR Mode"
 	print "-c  -  CBC Mode (Recommended, Default)"
@@ -176,17 +181,20 @@ if __name__ == '__main__':
 		printHelp()
 
 	elif sys.argv[1].upper() == gSAVE_CMD:
-		opt = "-c"  # defualt mode is CBC
+		opt = gCBC_MODE  # defualt mode is CBC
 		if len(sys.argv) < 4 or len(sys.argv) > 5:
 			printError()
 		elif len(sys.argv) == 5:
 			opt = sys.argv[4]
+			if opt != gCBC_MODE and opt != gCTR_MODE and opt != gEBC_MODE:
+				print "Error: '%s' is not a valid encryption option." % opt
+				printError()
 
 		err = saveCredentials(sys.argv[2], sys.argv[3], opt)
 		if err == 1:
 			print "Error: Username '%s' already exists." % sys.argv[2]
 		elif err == 2:
-			print "Error: Incorrect master password entered. Try again."
+			print "Error: An incorrect master password was entered."
 
 	elif sys.argv[1].upper() == gGET_CMD:	
 		if len(sys.argv) != 3:
