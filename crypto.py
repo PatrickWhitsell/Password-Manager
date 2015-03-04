@@ -72,6 +72,7 @@ class CCrypto:
 		plaintext = self.unpad(cipher.decrypt(ciphertext[AES.block_size:]))
 		return plaintext
 
-	def generateKey(self, password, iv):
-		key = KDF.PBKDF2(password, iv) #default key length 16, iteration count 1000 
+	def generateKey(self, password, salt):
+		# PBKDF2(password, salt, keylength, iterations)
+		key = KDF.PBKDF2(password, salt, 16, 10000) #lastpass uses 10000 iterations
 		return key

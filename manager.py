@@ -7,7 +7,7 @@ import hashlib
 #GLOBALS
 gHELP_CMD = '-h'
 gSAVE_CMD = '-S'
-gGET_CMD = '-G'
+gGET_CMD = '-A'
 
 gCHECK_FILE_NAME = 'checkfile.txt'
 gCREDS_FILE_NAME = 'passwd.txt'
@@ -31,12 +31,12 @@ def printError():
 def printHelp():
 	print "\n--- Usage ---"
 	print "[Storing:] python %s <method> <username> <password> <options>" % sys.argv[0]
-	print "[Example:] python %s -S us3rname passw0rd -c" % sys.argv[0]
-	print "\n[Retrieving:] python %s <method> <username> <options>" % sys.argv[0]
-	print "[Example:] python %s -G us3rname -c" % sys.argv[0]
+	print "[Example:] python %s %s us3rname passw0rd -c" % (sys.argv[0], gSAVE_CMD)
+	print "\n[Retrieving:] python %s <method> <username>" % sys.argv[0]
+	print "[Example:] python %s %s us3rname" % (sys.argv[0], gGET_CMD)
 	print "\nMethods: "
-	print "-S  -  Save a username and password"
-	print "-G  -  Retrieve a password by username"
+	print "%s  -  Save a username and password" % gSAVE_CMD
+	print "%s  -  Retrieve a password by username" % gGET_CMD
 	print "No default method. One of the above methods must be selected."
 	print "\nOptions: "
 	print "-e  -  EBC Mode (Insecure)"
@@ -66,8 +66,8 @@ def unpadPassword(password):
 
 def getMasterPassword():
 	password = getpass.getpass("Password:") #hidden input
-	passhash = hashlib.sha512(password).hexdigest()
-
+	passhash = hashlib.sha512(password).hexdigest() #sha512 is more difficult for GPUs
+													#also more blocks for encryption
 	if not os.path.isfile(gCHECK_FILE_NAME):
 		repassword = getpass.getpass("Reenter Password:") 
 		if password != repassword:
@@ -80,20 +80,24 @@ def getMasterPassword():
 	return passhash  # hash is more secure than the plaintext password
 
 
-def checkMasterPassword(cc, pwdhash):
-	retval = 0
+def checkMasterPassword(pwdhash):
 	filesize = os.stat(gCHECK_FILE_NAME).st_size
-	#Master Password just created
-	if filesize == 0:
-		crypthash = cc.encrypt(pwdhash)
+	retval = 0
+	cc_cbc = CCrypto("c")
+	cc_cbc.setPassword(pwdhash)
+
+	if filesize == 0: #Master Password just created
+		crypthash = cc_cbc.encrypt(pwdhash)
 		ofl = open(gCHECK_FILE_NAME, 'w')
 		ofl.write(crypthash)
 		ofl.close()
+		if os.path.isfile(gCREDS_FILE_NAME):
+			os.remove(gCREDS_FILE_NAME) #remove credentials under different key
 	else:
 		ifl = open(gCHECK_FILE_NAME, 'r')
 		line = ifl.readline().rstrip('\n')
 		ifl.close()	
-		filehash = cc.decrypt(line)
+		filehash = cc_cbc.decrypt(line)
 
 		if filehash == pwdhash:
 			retval = 0
@@ -112,7 +116,7 @@ def saveCredentials(username, password, option='-c'):
 		with open(gCREDS_FILE_NAME) as ifl:
 			for line in ifl:
 				line = line.rstrip('\n')
-				(uname, cipher, option) = line.split('|')
+				(uname, cipher, opt) = line.split('|')
 				if uname == username:
 					return 1
 	except:
@@ -122,7 +126,7 @@ def saveCredentials(username, password, option='-c'):
 	masterpass = getMasterPassword() #returns sha512 hash of password
 	cc.setPassword(masterpass)
 	
-	if checkMasterPassword(cc, masterpass) > 0:
+	if checkMasterPassword(masterpass) > 0:
 		return 2
 
 	paddedPassword = padPassword(password) #pad password for more encryption blocks
@@ -146,7 +150,7 @@ def getCredential(username):
 	except:
 		print "Error: You have not saved any creditials yet."
 		sys.exit(1)
-
+\
 	if nameNotFound:
 		print "Error: The username '%s' was not found." % username
 		sys.exit(1)
@@ -155,7 +159,7 @@ def getCredential(username):
 	masterpass = getMasterPassword()
 	cc.setPassword(masterpass)
 
-	if checkMasterPassword(cc, masterpass) > 0:
+	if checkMasterPassword(masterpass) > 0:
 		print "Error: Incorrect master password entered. Try again."
 		sys.exit(1)
 
@@ -172,7 +176,7 @@ if __name__ == '__main__':
 		printHelp()
 
 	elif sys.argv[1].upper() == gSAVE_CMD:
-		opt = ""
+		opt = "-c"  # defualt mode is CBC
 		if len(sys.argv) < 4 or len(sys.argv) > 5:
 			printError()
 		elif len(sys.argv) == 5:
