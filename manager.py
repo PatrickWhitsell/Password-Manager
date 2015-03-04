@@ -150,7 +150,7 @@ def getCredential(username):
 	except:
 		print "Error: You have not saved any creditials yet."
 		sys.exit(1)
-\
+
 	if nameNotFound:
 		print "Error: The username '%s' was not found." % username
 		sys.exit(1)
