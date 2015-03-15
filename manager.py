@@ -45,8 +45,8 @@ def printHelp():
 	print "No default method. One of the above methods must be selected."
 	print "\nOptions (AES Mode):"
 	print "-e  -  EBC Mode (Insecure)"
-	print "-r  -  CTR Mode"
-	print "-c  -  CBC Mode (Recommended, Default)"
+	print "-r  -  CTR Mode (Recommended, Default)"
+	print "-c  -  CBC Mode"
 	print "\nMaster Password: "
 	print "- You will be prompted to enter a master password to generate your AES key."
 	print "- The master password is set the first time the program is run."
@@ -56,7 +56,7 @@ def printHelp():
 
 #-------- USER CREDENTIAL FUCNTIONS --------#
 def padPassword(password):  
-	size = 0x40  # 64 bytes - pads 128 hex characters
+	size = 0x10  # 16 bytes - pads each side with one AES block
 	frontStr = Random.new().read(size).encode('hex')
 	backStr = Random.new().read(size).encode('hex')
 	padded = frontStr + password + backStr
@@ -64,7 +64,7 @@ def padPassword(password):
 
 
 def unpadPassword(password):
-	size = 0x40 * 2 # must double the size as padPassword()
+	size = 0x10 * 2  # must double the size as padPassword()
 	unpaded = password[size:-size]
 	return unpaded
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 		printHelp()
 
 	elif sys.argv[1].upper() == gSAVE_CMD:
-		opt = gCBC_MODE  # defualt mode is CBC
+		opt = gCTR_MODE  # defualt mode is CTR
 		if len(sys.argv) < 4 or len(sys.argv) > 5:
 			printError()
 		elif len(sys.argv) == 5:
